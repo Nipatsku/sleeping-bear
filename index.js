@@ -60,9 +60,9 @@ async function requestWakeLock() {
 }
 
 const thresholds = [
-    { volume: 30, level: 'chaos' },
-    { volume: 20, level: 'noisy' },
-    { volume: 10, level: 'slightly noisy' },
+    { volume: 20, level: 'chaos' },
+    { volume: 10, level: 'noisy' },
+    { volume: 5, level: 'slightly noisy' },
     { volume: 0, level: 'calm' },
 ]
 
