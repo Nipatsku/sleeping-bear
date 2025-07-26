@@ -60,9 +60,9 @@ async function requestWakeLock() {
 }
 
 const thresholds = [
-    { volume: 60, level: 'chaos' },
-    { volume: 40, level: 'noisy' },
-    { volume: 20, level: 'slightly noisy' },
+    { volume: 30, level: 'chaos' },
+    { volume: 20, level: 'noisy' },
+    { volume: 10, level: 'slightly noisy' },
     { volume: 0, level: 'calm' },
 ]
 
@@ -85,10 +85,10 @@ const axis1 = chart.axisY
 const axis2 = chart.addAxisY()
 lcjs.synchronizeAxisIntervals(axis1, axis2)
 axis2.setStrokeStyle(new lcjs.SolidLine({ thickness: 1, fillStyle: new lcjs.SolidFill({ color: lcjs.ColorRGBA(0, 0, 0) }) }))
-    ;[0, 20, 40, 60, 80, 100].forEach(v => axis2.addCustomTick().setValue(v).setGridStrokeStyle(lcjs.emptyLine))
+    ;[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].forEach(v => axis2.addCustomTick().setValue(v).setGridStrokeStyle(lcjs.emptyLine).setTextFormatter(_ => `${v}`))
 
 chart.forEachAxis(axis => axis.setTickStrategy(lcjs.AxisTickStrategies.Empty))
-axis1.setInterval({ start: 0, end: 100 })
+axis1.setInterval({ start: 0, end: 50 })
 axis1.setStrokeStyle(new lcjs.SolidLine({ thickness: 1, fillStyle: new lcjs.SolidFill({ color: lcjs.ColorRGBA(0, 0, 0) }) }))
 const ticks = thresholds.map(threshold =>
     axis1.addCustomTick()
