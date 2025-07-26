@@ -20,7 +20,7 @@ function processAudio(stream) {
         let volume = rms * 100; // scale to 0–100
         const t = performance.now()
         buffer.push({ volume, t })
-        buffer = buffer.filter(s => s.t > t - 5000)
+        buffer = buffer.filter(s => s.t > t - 7500)
         const smoothed = buffer.reduce((prev, cur) => prev + cur.volume, 0) / buffer.length
         listeners.forEach(listener => listener({ latest: volume, smoothed, buffer }))
         // console.log('Volume Level:', volume.toFixed(2)); // or update UI
@@ -60,11 +60,10 @@ async function requestWakeLock() {
 }
 
 const thresholds = [
-    { volume: 80, level: 'chaos' },
-    { volume: 60, level: 'noisy' },
-    { volume: 40, level: 'slightly noisy' },
-    { volume: 20, level: 'calm' },
-    // ^ from 0 to x, = calm
+    { volume: 60, level: 'chaos' },
+    { volume: 40, level: 'noisy' },
+    { volume: 20, level: 'slightly noisy' },
+    { volume: 0, level: 'calm' },
 ]
 
 const lc = lcjs.lightningChart({
@@ -78,20 +77,24 @@ const chart = lc.ChartXY({
     container: document.getElementById('chart'),
     animationsEnabled: false,
     theme: lcjsThemes.flatThemeLight,
-    interactable: false
+    interactable: false,
+    defaultAxisY: { opposite: true }
 })
     .setTitle('')
+const axis1 = chart.axisY
+const axis2 = chart.addAxisY()
+lcjs.synchronizeAxisIntervals(axis1, axis2)
+axis2.setStrokeStyle(new lcjs.SolidLine({ thickness: 1, fillStyle: new lcjs.SolidFill({ color: lcjs.ColorRGBA(0, 0, 0) }) }))
+    ;[0, 20, 40, 60, 80, 100].forEach(v => axis2.addCustomTick().setValue(v).setGridStrokeStyle(lcjs.emptyLine))
+
 chart.forEachAxis(axis => axis.setTickStrategy(lcjs.AxisTickStrategies.Empty))
-chart.axisY.setInterval({ start: 0, end: 100 }).setStrokeStyle(new lcjs.SolidLine({ thickness: 1, fillStyle: new lcjs.SolidFill({ color: lcjs.ColorRGBA(0, 0, 0) }) }))
-    // thresholds.forEach(threshold => {
-    //     chart.axisY.addCustomTick()
-    //         .setValue(threshold.volume)
-    //         .setTextFormatter(() => threshold.level)
-    // })
-    ;[20, 40, 60, 80].forEach(v => {
-        chart.axisY.addCustomTick()
-            .setValue(v)
-    })
+axis1.setInterval({ start: 0, end: 100 })
+axis1.setStrokeStyle(new lcjs.SolidLine({ thickness: 1, fillStyle: new lcjs.SolidFill({ color: lcjs.ColorRGBA(0, 0, 0) }) }))
+const ticks = thresholds.map(threshold =>
+    axis1.addCustomTick()
+        .setValue(threshold.volume)
+        .setTextFormatter(() => threshold.level)
+)
 chart.engine.container.style.width = '100vw'
 chart.engine.container.style.height = '10rem'
 chart.engine.container.style.position = 'fixed'
@@ -105,13 +108,19 @@ const seriesSmoothed = chart.addPointLineAreaSeries({ dataPattern: 'ProgressiveX
     .setAutoScrollingEnabled(false)
     .setPointFillStyle(lcjs.emptyFill)
 
+let prevLevel
 listeners.push((info) => {
     if (!visible) return
     const { latest, smoothed, buffer } = info
-    // console.log(`${volume} %`)
-    // volumeMeter.style.width = `${Math.random() * 50}%`//`${volume}%`
     seriesRaw.clear().appendJSON(buffer, { x: 't', y: 'volume' })
     seriesSmoothed.appendSample({ x: performance.now(), y: smoothed })
+    const level = thresholds.find(t => smoothed >= t.volume)
+    if (level !== prevLevel) {
+        console.log(level.level)
+        const iLevel = thresholds.indexOf(level)
+        ticks.forEach((tick, i) => tick.setMarker(marker => marker.setTextFont(font => font.setWeight(i === iLevel ? 'bold' : 'normal'))))
+        prevLevel = level
+    }
 })
 
 let visible = true
