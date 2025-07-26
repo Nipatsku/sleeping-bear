@@ -113,6 +113,7 @@ listeners.push((info) => {
 let visible = true
 document.getElementById('calibrate').onclick = () => {
     visible = !visible
-    chart.engine.container.style.display = !visible ? 'none' : 'block'
+    chart.engine.container.style.opacity = !visible ? '0' : '1'
+    document.getElementById('calibrate').style.opacity = !visible ? '0.3' : '1'
     requestWakeLock()
 }
