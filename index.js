@@ -83,11 +83,15 @@ const chart = lc.ChartXY({
     .setTitle('')
 chart.forEachAxis(axis => axis.setTickStrategy(lcjs.AxisTickStrategies.Empty))
 chart.axisY.setInterval({ start: 0, end: 100 }).setStrokeStyle(new lcjs.SolidLine({ thickness: 1, fillStyle: new lcjs.SolidFill({ color: lcjs.ColorRGBA(0, 0, 0) }) }))
-thresholds.forEach(threshold => {
-    chart.axisY.addCustomTick()
-        .setValue(threshold.volume)
-        .setTextFormatter(() => threshold.level)
-})
+    // thresholds.forEach(threshold => {
+    //     chart.axisY.addCustomTick()
+    //         .setValue(threshold.volume)
+    //         .setTextFormatter(() => threshold.level)
+    // })
+    ;[20, 40, 60, 80].forEach(v => {
+        chart.axisY.addCustomTick()
+            .setValue(v)
+    })
 chart.engine.container.style.width = '100vw'
 chart.engine.container.style.height = '10rem'
 chart.engine.container.style.position = 'fixed'
