@@ -8,6 +8,7 @@ function processAudio(stream) {
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
     source.connect(analyser);
     let buffer = []
+    let bufferSmoothed = []
     function getVolume() {
         analyser.getByteTimeDomainData(dataArray);
         // Calculate root mean square (RMS) volume
@@ -22,7 +23,9 @@ function processAudio(stream) {
         buffer.push({ volume, t })
         buffer = buffer.filter(s => s.t > t - 7500)
         const smoothed = buffer.reduce((prev, cur) => prev + cur.volume, 0) / buffer.length
-        listeners.forEach(listener => listener({ latest: volume, smoothed, buffer }))
+        bufferSmoothed.push({ smoothed, t })
+        bufferSmoothed = bufferSmoothed.filter(s => s.t > t - 7500)
+        listeners.forEach(listener => listener({ latest: volume, smoothed, buffer, bufferSmoothed }))
         // console.log('Volume Level:', volume.toFixed(2)); // or update UI
         requestAnimationFrame(getVolume); // keep running
     }
@@ -60,9 +63,9 @@ async function requestWakeLock() {
 }
 
 const thresholds = [
-    { volume: 20, level: 'chaos' },
-    { volume: 10, level: 'noisy' },
-    { volume: 5, level: 'slightly noisy' },
+    { volume: 10, level: 'chaos' },
+    { volume: 5, level: 'noisy' },
+    { volume: 2, level: 'slightly noisy' },
     { volume: 0, level: 'calm' },
 ]
 
@@ -89,8 +92,6 @@ axis2.setStrokeStyle(new lcjs.SolidLine({ thickness: 1, fillStyle: new lcjs.Soli
 
 chart.forEachAxis(axis => axis.setTickStrategy(lcjs.AxisTickStrategies.Empty))
 const defaultMax = thresholds[0].volume + 5
-axis1.setIntervalRestrictions({ startMin: 0, startMax: 0, endMin: defaultMax, endMax: 100 })
-    .setInterval({ start: 0, end: defaultMax, stopAxisAfter: false })
 axis1.setStrokeStyle(new lcjs.SolidLine({ thickness: 1, fillStyle: new lcjs.SolidFill({ color: lcjs.ColorRGBA(0, 0, 0) }) }))
 const ticks = thresholds.map(threshold =>
     axis1.addCustomTick()
@@ -105,23 +106,23 @@ const seriesRaw = chart.addPointLineAreaSeries({ dataPattern: 'ProgressiveX', ax
     .setAreaFillStyle(lcjs.emptyFill)
     .setStrokeStyle(new lcjs.SolidLine({ thickness: 1, fillStyle: new lcjs.SolidFill({ color: lcjs.ColorRGBA(0, 0, 0) }) }))
     .setPointFillStyle(lcjs.emptyFill)
-const seriesSmoothed = chart.addPointLineAreaSeries({ dataPattern: 'ProgressiveX', axisY: axis1 })
-    .setMaxSampleCount(10000)
     .setAutoScrollingEnabled(false)
+const seriesSmoothed = chart.addPointLineAreaSeries({ dataPattern: 'ProgressiveX', axisY: axis1 })
     .setPointFillStyle(lcjs.emptyFill)
 
 let prevLevel
 listeners.push((info) => {
     if (!visible) return
-    const { latest, smoothed, buffer } = info
+    const { latest, smoothed, buffer, bufferSmoothed } = info
     seriesRaw.clear().appendJSON(buffer, { x: 't', y: 'volume' })
-    seriesSmoothed.appendSample({ x: performance.now(), y: smoothed })
+    seriesSmoothed.clear().appendJSON(bufferSmoothed, { x: 't', y: 'smoothed' })
     const level = thresholds.find(t => smoothed >= t.volume)
     if (level !== prevLevel) {
         console.log(level.level)
         const iLevel = thresholds.indexOf(level)
         ticks.forEach((tick, i) => tick.setMarker(marker => marker.setTextFont(font => font.setWeight(i === iLevel ? 'bold' : 'normal'))))
         prevLevel = level
+        axis1.setInterval({ start: 0, end: Math.max(level.volume + 10, smoothed) })
     }
 })
 
