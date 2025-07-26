@@ -55,7 +55,8 @@ const lc = lcjs.lightningChart({
 const chart = lc.ChartXY({
     container: document.getElementById('chart'),
     animationsEnabled: false,
-    theme: lcjsThemes.flatThemeLight
+    theme: lcjsThemes.flatThemeLight,
+    interactable: false
 })
     .setTitle('')
 chart.forEachAxis(axis => axis.setTickStrategy(lcjs.AxisTickStrategies.Empty))

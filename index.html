@@ -9,6 +9,7 @@
             height: 100vh;
             padding: 0;
             margin: 0;
+            overflow: hidden;
         }
     </style>
 </head>
@@ -19,7 +20,7 @@
     </div>
     <div id="chart"></div>
     <div style="position: fixed; top: 0; right: 0">
-        <span style="font-size: 5rem;" id="calibrate">⚙️</span>
+        <span style="font-size: 5rem; user-select: none;" id="calibrate">⚙️</span>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@lightningchart/lcjs@7.1.2/dist/lcjs.iife.js"></script>
     <script
