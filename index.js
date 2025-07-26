@@ -19,7 +19,7 @@ function processAudio(stream) {
         let rms = Math.sqrt(sum / dataArray.length);
         let volume = rms * 100; // scale to 0–100
         const t = performance.now()
-        buffer.push({volume, t})
+        buffer.push({ volume, t })
         buffer = buffer.filter(s => s.t > t - 5000)
         const smoothed = buffer.reduce((prev, cur) => prev + cur.volume, 0) / buffer.length
         listeners.forEach(listener => listener({ latest: volume, smoothed, buffer }))
@@ -36,6 +36,28 @@ navigator.mediaDevices.getUserMedia({ audio: true })
     .catch(err => {
         console.error('Microphone access denied:', err);
     });
+
+let wakeLock = null;
+let wakeLockRequested = false
+async function requestWakeLock() {
+    if (wakeLockRequested) return
+    wakeLockRequested = true
+    try {
+        if ('wakeLock' in navigator) {
+            wakeLock = await navigator.wakeLock.request('screen');
+            console.log('Wake Lock is active');
+
+            // Optional: re-acquire lock if it's released by the system
+            wakeLock.addEventListener('release', () => {
+                console.log('Wake Lock was released');
+            });
+        } else {
+            console.warn('Wake Lock API not supported on this browser.');
+        }
+    } catch (err) {
+        console.error(`Wake Lock error: ${err.name}, ${err.message}`);
+    }
+}
 
 const thresholds = [
     { volume: 80, level: 'chaos' },
@@ -60,7 +82,7 @@ const chart = lc.ChartXY({
 })
     .setTitle('')
 chart.forEachAxis(axis => axis.setTickStrategy(lcjs.AxisTickStrategies.Empty))
-chart.axisY.setInterval({ start: 0, end: 100 }).setStrokeStyle(new lcjs.SolidLine({ thickness: 1, fillStyle: new lcjs.SolidFill({ color: lcjs.ColorRGBA(0,0,0) }) }))
+chart.axisY.setInterval({ start: 0, end: 100 }).setStrokeStyle(new lcjs.SolidLine({ thickness: 1, fillStyle: new lcjs.SolidFill({ color: lcjs.ColorRGBA(0, 0, 0) }) }))
 thresholds.forEach(threshold => {
     chart.axisY.addCustomTick()
         .setValue(threshold.volume)
@@ -92,4 +114,5 @@ let visible = true
 document.getElementById('calibrate').onclick = () => {
     visible = !visible
     chart.engine.container.style.display = !visible ? 'none' : 'block'
+    requestWakeLock()
 }
