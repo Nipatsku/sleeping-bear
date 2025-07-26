@@ -88,7 +88,9 @@ axis2.setStrokeStyle(new lcjs.SolidLine({ thickness: 1, fillStyle: new lcjs.Soli
     ;[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].forEach(v => axis2.addCustomTick().setValue(v).setGridStrokeStyle(lcjs.emptyLine).setTextFormatter(_ => `${v}`))
 
 chart.forEachAxis(axis => axis.setTickStrategy(lcjs.AxisTickStrategies.Empty))
-axis1.setInterval({ start: 0, end: 50 })
+const defaultMax = thresholds[0].volume + 5
+axis1.setIntervalRestrictions({ startMin: 0, startMax: 0, endMin: defaultMax, endMax: 100 })
+    .setInterval({ start: 0, end: defaultMax, stopAxisAfter: false })
 axis1.setStrokeStyle(new lcjs.SolidLine({ thickness: 1, fillStyle: new lcjs.SolidFill({ color: lcjs.ColorRGBA(0, 0, 0) }) }))
 const ticks = thresholds.map(threshold =>
     axis1.addCustomTick()
@@ -99,11 +101,11 @@ chart.engine.container.style.width = '100vw'
 chart.engine.container.style.height = '10rem'
 chart.engine.container.style.position = 'fixed'
 chart.engine.container.style.bottom = '1rem'
-const seriesRaw = chart.addPointLineAreaSeries({ dataPattern: 'ProgressiveX' })
+const seriesRaw = chart.addPointLineAreaSeries({ dataPattern: 'ProgressiveX', axisY: axis1 })
     .setAreaFillStyle(lcjs.emptyFill)
     .setStrokeStyle(new lcjs.SolidLine({ thickness: 1, fillStyle: new lcjs.SolidFill({ color: lcjs.ColorRGBA(0, 0, 0) }) }))
     .setPointFillStyle(lcjs.emptyFill)
-const seriesSmoothed = chart.addPointLineAreaSeries({ dataPattern: 'ProgressiveX' })
+const seriesSmoothed = chart.addPointLineAreaSeries({ dataPattern: 'ProgressiveX', axisY: axis1 })
     .setMaxSampleCount(10000)
     .setAutoScrollingEnabled(false)
     .setPointFillStyle(lcjs.emptyFill)
